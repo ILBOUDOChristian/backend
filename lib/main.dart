@@ -6,7 +6,7 @@ import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/posts/presentation/post_list_screen.dart';
 import 'features/posts/presentation/user_profile_screen.dart';
-import 'features/todos/presentation/todos_screen.dart';
+import 'package:connected_app/features/todos/presentation/todos_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

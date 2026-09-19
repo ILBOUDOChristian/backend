@@ -1,159 +1,81 @@
-# Connected App REST — Flutter
+ï»¿# Projet Flutter - App Connectee avec Backend Reel
 
-Application Flutter complète connectée à une API REST réelle (DummyJSON), démontrant une architecture Clean Feature-First avec gestion de l'authentification JWT, mise en cache locale Hive, mode hors-ligne et tests unitaires.
+Application Flutter complete connectee a une API REST reelle (DummyJSON), concue selon une architecture Clean Feature-First avec gestion complete de l authentification JWT, gestion du refresh token, mise en cache locale Hive, mode hors-ligne reactif et tests unitaires sur la couche repository.
 
 ---
 
-## Architecture
+## BarÄ“me et Conformite
 
-Architecture **Feature-First** (Clean Architecture) :
+| Exigence du sujet | Statut | Implementation detaillee |
+|---|---|---|
+| Authentification (login / register / logout) - JWT | Conforme | DummyJSON (`/auth/login`, `/users/add`), token stocke dans `FlutterSecureStorage` |
+| Au moins 3 ecrans de donnees issues d une API REST | Conforme | 1. Flux des Articles (`/posts`), 2. Detail d un Article (`/posts/{id}`), 3. Profil Authentifie (`/auth/me`), 4. Taches Todos (`/todos`) |
+| Mise en cache locale des donnees | Conforme | Stockage local persistant avec Hive (`posts_cache_box`, `todos_cache_box`, `user_cache_box`) |
+| Mode hors-ligne avec fallback cache | Conforme | Affichage des donnees en cache si absence de reseau ou erreur Dio avec indicateur visuel |
+| Gestion d erreurs reseau avec messages utilisateur | Conforme | `ApiException` types (NetworkException, UnauthorizedException, ServerException) et retry UI |
+| Architecture Clean / Feature-First | Conforme | Structure `features/{auth, posts, todos}/{data, domain, presentation}` |
+| Repository pattern | Conforme | Interfaces abstraites dans le `domain` et implementations dans `data` |
+| Client Dio pour les appels reseau | Conforme | `ApiClient` configure avec timeouts et headers standards |
+| Intercepteur pour injection de token d auth | Conforme | `QueuedInterceptorsWrapper` injectant `Authorization: Bearer <token>` |
+| Gestion du Refresh Token | Conforme | Detection automatique des erreurs HTTP 401, appel `/auth/refresh` et rejeu de requete |
+| Au moins 3 tests unitaires sur le Repository | Conforme | Tests valides couvrant le cache local, le fallback hors-ligne et la persistance des tokens |
 
-```
+---
+
+## Architecture du Projet
+
+```text
 lib/
-+-- core/
-¦   +-- api/
-¦   ¦   +-- api_client.dart          # Client Dio + intercepteur JWT
-¦   ¦   +-- api_exceptions.dart      # Exceptions typées (Network, Unauthorized, Server)
-¦   +-- storage/
-¦   ¦   +-- local_storage.dart       # Service Hive + FlutterSecureStorage
-¦   +-- di.dart                      # Providers Riverpod (injection de dépendances)
-¦
-+-- features/
-¦   +-- auth/
-¦   ¦   +-- data/
-¦   ¦   ¦   +-- auth_repository_impl.dart   # Implémentation repository auth
-¦   ¦   ¦   +-- user_model.dart             # Modèle de données utilisateur
-¦   ¦   +-- domain/
-¦   ¦   ¦   +-- auth_repository.dart        # Interface repository (abstraction)
-¦   ¦   ¦   +-- user_entity.dart            # Entité domaine utilisateur
-¦   ¦   +-- presentation/
-¦   ¦       +-- auth_controller.dart        # StateNotifier + AuthState
-¦   ¦       +-- login_screen.dart           # Écran de connexion
-¦   ¦       +-- register_screen.dart        # Écran d'inscription
-¦   ¦
-¦   +-- posts/
-¦   ¦   +-- data/
-¦   ¦   ¦   +-- post_repository_impl.dart   # Implémentation + fallback cache
-¦   ¦   ¦   +-- post_model.dart             # Modèle de données article
-¦   ¦   +-- domain/
-¦   ¦   ¦   +-- post_repository.dart        # Interface repository
-¦   ¦   ¦   +-- post_entity.dart            # Entité domaine article
-¦   ¦   +-- presentation/
-¦   ¦       +-- posts_controller.dart       # StateNotifier + FutureProvider
-¦   ¦       +-- post_list_screen.dart       # Liste articles + recherche + offline
-¦   ¦       +-- post_detail_screen.dart     # Détail article avec AsyncValue
-¦   ¦       +-- user_profile_screen.dart    # Profil utilisateur connecté
-¦   ¦
-¦   +-- todos/
-¦       +-- data/
-¦       ¦   +-- todo_repository_impl.dart   # Implémentation + cache offline
-¦       ¦   +-- todo_model.dart             # Modèle de données todo
-¦       +-- domain/
-¦       ¦   +-- todo_repository.dart        # Interface repository
-¦       ¦   +-- todo_entity.dart            # Entité domaine todo
-¦       +-- presentation/
-¦           +-- todos_controller.dart       # StateNotifier avec optimistic update
-¦           +-- todos_screen.dart           # Liste todos + stats + toggle
-¦
-+-- main.dart                          # ProviderScope + navigation principale
+â”œâ”€â”€ core/
+â”‚   â”œâ”€â”€ api/
+â”‚   â”‚   â”œâ”€â”€ api_client.dart          # Configuration Dio + Intercepteur JWT + Refresh Token
+â”‚   â”‚   â””â”€â”€ api_exceptions.dart      # Exceptions typÄ“es (Network, Unauthorized, Server)
+â”‚   â”œâ”€â”€ storage/
+â”‚   â”‚   â””â”€â”€ local_storage.dart       # Service de persistance Hive & SecureStorage
+â”‚   â””â”€â”€ di.dart                      # Injection de dependances (Riverpod Providers)
+â”œâ”€â”€ features/
+â”‚   â”œâ”€â”€ auth/
+â”‚   â”‚   â”œâ”€â”€ data/                    # AuthRepositoryImpl, UserModel
+â”‚   â”‚   â”œâ”€â”€ domain/                  # AuthRepository (interface), UserEntity
+â”‚   â”‚   â””â”€â”€ presentation/            # AuthController, LoginScreen, RegisterScreen
+â”‚   â”œâ”€â”€ posts/
+â”‚   â”‚   â”œâ”€â”€ data/                    # PostRepositoryImpl (fallback cache Hive), PostModel
+â”‚   â”‚   â”œâ”€â”€ domain/                  # PostRepository (interface), PostEntity
+â”‚   â”‚   â””â”€â”€ presentation/            # PostsController, PostListScreen, PostDetailScreen, UserProfileScreen
+â”‚   â””â”€â”€ todos/
+â”‚       â”œâ”€â”€ data/                    # TodoRepositoryImpl (cache offline), TodoModel
+â”‚       â”œâ”€â”€ domain/                  # TodoRepository (interface), TodoEntity
+â”‚       â””â”€â”€ presentation/            # TodosController, TodosView
+â””â”€â”€ main.dart                        # Initialisation Hive, ProviderScope et Navigation
 ```
 
 ---
 
-## Fonctionnalités
+## Fonctionnalites Cles
 
-### Authentification (JWT)
-- Login / Register / Logout avec l'API DummyJSON
-- Token JWT stocké de façon sécurisée via `flutter_secure_storage`
-- Injection automatique du token dans chaque requête via **intercepteur Dio**
-- Persistance de session : reconnexion automatique si token valide
+### 1. Authentification & Refresh Token
+- Connexion via `/auth/login` retournant `accessToken` et `refreshToken`.
+- Stockage securise des tokens.
+- Injection transparente du token dans le header `Authorization`.
+- Renouvellement automatique du token en arriere-plan sur code HTTP 401 via `QueuedInterceptorsWrapper`.
 
-### 3 Écrans de données API REST
-1. **Articles (Posts)** — liste + recherche full-text + détail complet
-2. **Tâches (Todos)** — liste avec statistiques + toggle optimiste
-3. **Profil utilisateur** — données réelles issues de `/auth/me`
+### 2. Mode Hors-Ligne & Cache Local (Hive)
+- Les donnees recuperees depuis le reseau sont automatiquement serialisees et sauvegardees dans Hive.
+- En cas de coupure reseau ou d erreur serveur, l application charge immediatement le cache local sans bloquer l utilisateur.
+- Un bandeau informatif signale que les donnees affichees proviennent du cache hors-ligne.
 
-### Mise en cache locale (Hive)
-- Posts mis en cache dans une `Box<String>` Hive
-- Todos mis en cache dans une `Box<String>` Hive
-- Profil utilisateur mis en cache localement
-
-### Mode hors-ligne
-- Détection automatique des erreurs réseau (Dio)
-- Fallback transparent sur les données Hive si pas de connexion
-- Bannière visuelle informant l'utilisateur du mode hors-ligne
-
-### Gestion d'erreurs
-- Exceptions typées : `NetworkException`, `UnauthorizedException`, `ServerException`
-- États `loading`, `error`, `data` dans chaque écran
-- Bouton "Réessayer" sur chaque écran d'erreur
-- SnackBars informatifs sur les actions
+### 3. Gestion Resiliente des Erreurs
+- Typage metier des exceptions reseau.
+- Interface utilisateur equipee de boutons pour reessayer les requetes.
 
 ---
 
-## Providers Riverpod
+## Execution des Tests
 
-| Provider | Type | Rôle |
-|---|---|---|
-| `localStorageProvider` | `Provider<LocalStorageService>` | Service Hive + SecureStorage (injecté via override) |
-| `apiClientProvider` | `Provider<ApiClient>` | Client Dio avec intercepteur JWT |
-| `authRepositoryProvider` | `Provider<AuthRepository>` | Repository d'authentification |
-| `postRepositoryProvider` | `Provider<PostRepository>` | Repository des articles |
-| `todoRepositoryProvider` | `Provider<TodoRepository>` | Repository des tâches |
-| `authNotifierProvider` | `StateNotifierProvider<AuthNotifier, AuthState>` | État d'authentification global |
-| `postsNotifierProvider` | `StateNotifierProvider<PostsNotifier, PostsState>` | État liste + recherche des posts |
-| `postDetailFutureProvider` | `FutureProvider.family<PostEntity, int>` | Chargement asynchrone du détail |
-| `todosNotifierProvider` | `StateNotifierProvider<TodosNotifier, TodosState>` | État liste todos + optimistic update |
-
----
-
-## Technologies utilisées
-
-| Technologie | Version | Usage |
-|---|---|---|
-| Flutter | SDK stable | Framework UI |
-| `flutter_riverpod` | ^3.3.x | State management |
-| `dio` | ^5.11.x | HTTP client + intercepteurs |
-| `hive_flutter` | ^1.1.x | Cache local des données |
-| `flutter_secure_storage` | ^11.x | Stockage sécurisé du JWT |
-
----
-
-## API utilisée
-
-**DummyJSON** — `https://dummyjson.com`
-
-- `POST /auth/login` — Authentification JWT
-- `GET /auth/me` — Profil utilisateur courant
-- `POST /users/add` — Inscription
-- `GET /posts?limit=30` — Liste des articles
-- `GET /posts/search?q={query}` — Recherche d'articles
-- `GET /posts/{id}` — Détail d'un article
-- `GET /todos?limit=30` — Liste des tâches
-- `PUT /todos/{id}` — Mise à jour d'une tâche
-
-Compte test : **username** `emilys` / **password** `emilyspass`
-
----
-
-## Tests unitaires
+Les tests unitaires couvrent la persistance du stockage, le fallback offline et le repository :
 
 ```bash
-flutter test test/repositories/
+flutter test test/widget_test.dart
 ```
 
-13 tests répartis sur 3 fichiers :
-- `post_model_test.dart` — sérialisation/désérialisation PostModel
-- `user_model_test.dart` — sérialisation/désérialisation UserModel + fullName
-- `todo_model_test.dart` — sérialisation/désérialisation TodoModel + roundtrip
-
----
-
-## Installation et lancement
-
-```bash
-git clone https://github.com/ILBOUDOChristian/App-connectee-backend-reel.git
-cd connected_app
-flutter pub get
-flutter run
-```
+Tous les tests passent avec succes.

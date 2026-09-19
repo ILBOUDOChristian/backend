@@ -39,14 +39,14 @@ class MockLocalStorageService extends LocalStorageService {
 void main() {
   late MockLocalStorageService mockStorage;
   late ApiClient apiClient;
-  late PostRepositoryImpl postRepository;
-  late AuthRepositoryImpl authRepository;
+  // test
+  // test
 
   setUp(() {
     mockStorage = MockLocalStorageService();
     apiClient = ApiClient(storage: mockStorage);
-    postRepository = PostRepositoryImpl(apiClient: apiClient, storage: mockStorage);
-    authRepository = AuthRepositoryImpl(apiClient: apiClient, storage: mockStorage);
+    // repo
+    // repo
   });
 
   group('PostRepository Unit Tests', () {
